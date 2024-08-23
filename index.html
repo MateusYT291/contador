@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contador de Cliques</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        #contador {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        #menu-conquistas, #menu-ranking {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+        }
+        input[type="text"] {
+            margin-top: 10px;
+            padding: 5px;
+            font-size: 1em;
+        }
+    </style>
+</head>
+<body>
+    <div id="contador">0 vezes clicadas</div>
+    <button id="resetar">Resetar</button>
+    <button id="conquistas">Conquistas</button>
+    <button id="ranking">Ranking</button>
+
+    <div id="menu-conquistas">
+        <h3>Recorde: <span id="recorde">0</span></h3>
+        <p>Conquistas:</p>
+        <ul id="lista-conquistas">
+            <li id="achv-1000">1000 cliques - Não Conquistado</li>
+            <li id="achv-2000">2000 cliques - Não Conquistado</li>
+            <li id="achv-5000">5000 cliques - Não Conquistado</li>
+            <li id="achv-10000">10000 cliques - Não Conquistado</li>
+        </ul>
+    </div>
+
+    <div id="menu-ranking">
+        <h3>Ranking:</h3>
+        <ul id="lista-ranking"></ul>
+        <input type="text" id="nome" placeholder="Digite seu nome">
+        <button id="salvar-nome">Salvar</button>
+    </div>
+
+    <script>
+        let contador = parseInt(localStorage.getItem('contador')) || 0;
+        let recorde = parseInt(localStorage.getItem('recorde')) || 0;
+        let ranking = JSON.parse(localStorage.getItem('ranking')) || [];
+
+        document.getElementById('contador').innerText = `${contador} vezes clicadas`;
+
+        function atualizarRecorde() {
+            if (contador > recorde) {
+                recorde = contador;
+                localStorage.setItem('recorde', recorde);
+                document.getElementById('recorde').innerText = recorde;
+            }
+        }
+
+        function verificarConquistas() {
+            document.getElementById('achv-1000').innerText = contador >= 1000 ? '1000 cliques - Conquistado' : '1000 cliques - Não Conquistado';
+            document.getElementById('achv-2000').innerText = contador >= 2000 ? '2000 cliques - Conquistado' : '2000 cliques - Não Conquistado';
+            document.getElementById('achv-5000').innerText = contador >= 5000 ? '5000 cliques - Conquistado' : '5000 cliques - Não Conquistado';
+            document.getElementById('achv-10000').innerText = contador >= 10000 ? '10000 cliques - Conquistado' : '10000 cliques - Não Conquistado';
+        }
+
+        function atualizarRanking() {
+            const listaRanking = document.getElementById('lista-ranking');
+            listaRanking.innerHTML = '';
+            ranking.forEach(item => {
+                const li = document.createElement('li');
+                li.innerText = `${item.nome}: ${item.pontos} cliques`;
+                listaRanking.appendChild(li);
+            });
+        }
+
+        document.body.addEventListener('click', () => {
+            contador++;
+            localStorage.setItem('contador', contador);
+            document.getElementById('contador').innerText = `${contador} vezes clicadas`;
+            atualizarRecorde();
+            verificarConquistas();
+        });
+
+        document.body.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                contador++;
+                localStorage.setItem('contador', contador);
+                document.getElementById('contador').innerText = `${contador} vezes clicadas`;
+                atualizarRecorde();
+                verificarConquistas();
+            }
+        });
+
+        document.getElementById('resetar').addEventListener('click', () => {
+            contador = 0;
+            localStorage.setItem('contador', contador);
+            document.getElementById('contador').innerText = `${contador} vezes clicadas`;
+            verificarConquistas();
+        });
+
+        document.getElementById('conquistas').addEventListener('click', () => {
+            const menu = document.getElementById('menu-conquistas');
+            menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+        });
+
+        document.getElementById('ranking').addEventListener('click', () => {
+            const menu = document.getElementById('menu-ranking');
+            menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+            atualizarRanking();
+        });
+
+        document.getElementById('salvar-nome').addEventListener('click', () => {
+            const nome = document.getElementById('nome').value.trim();
+            if (nome) {
+                ranking.push({ nome, pontos: contador });
+                ranking.sort((a, b) => b.pontos - a.pontos);
+                localStorage.setItem('ranking', JSON.stringify(ranking));
+                atualizarRanking();
+            }
+        });
+
+        atualizarRecorde();
+        verificarConquistas();
+        atualizarRanking();
+    </script>
+</body>
+</html>
