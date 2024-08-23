@@ -32,6 +32,15 @@
             padding: 5px;
             font-size: 1em;
         }
+        .ranking-item:first-child {
+            color: gold;
+        }
+        .ranking-item:nth-child(2) {
+            color: silver;
+        }
+        .ranking-item:nth-child(3) {
+            color: bronze;
+        }
     </style>
 </head>
 <body>
@@ -55,7 +64,7 @@
         <h3>Ranking:</h3>
         <ul id="lista-ranking"></ul>
         <input type="text" id="nome" placeholder="Digite seu nome">
-        <button id="salvar-nome">Salvar</button>
+        <button id="salvar-nome">Salvar/Atualizar Resultado</button>
     </div>
 
     <script>
@@ -83,9 +92,10 @@
         function atualizarRanking() {
             const listaRanking = document.getElementById('lista-ranking');
             listaRanking.innerHTML = '';
-            ranking.forEach(item => {
+            ranking.sort((a, b) => b.pontos - a.pontos).forEach((item, index) => {
                 const li = document.createElement('li');
-                li.innerText = `${item.nome}: ${item.pontos} cliques`;
+                li.innerText = `${index + 1}. ${item.nome}: ${item.pontos} cliques`;
+                li.classList.add('ranking-item');
                 listaRanking.appendChild(li);
             });
         }
@@ -129,7 +139,12 @@
         document.getElementById('salvar-nome').addEventListener('click', () => {
             const nome = document.getElementById('nome').value.trim();
             if (nome) {
-                ranking.push({ nome, pontos: contador });
+                const existing = ranking.find(item => item.nome === nome);
+                if (existing) {
+                    existing.pontos = contador;
+                } else {
+                    ranking.push({ nome, pontos: contador });
+                }
                 ranking.sort((a, b) => b.pontos - a.pontos);
                 localStorage.setItem('ranking', JSON.stringify(ranking));
                 atualizarRanking();
