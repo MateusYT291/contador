@@ -64,22 +64,47 @@
         <h3>Ranking:</h3>
         <ul id="lista-ranking"></ul>
         <input type="text" id="nome" placeholder="Digite seu nome">
-        <button id="salvar-nome">Salvar/Atualizar Resultado</button>
+        <button id="salvar-nome">Salvar</button>
     </div>
 
+    <!-- Importando o SDK do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
     <script>
-        let contador = parseInt(localStorage.getItem('contador')) || 0;
-        let recorde = parseInt(localStorage.getItem('recorde')) || 0;
-        let ranking = JSON.parse(localStorage.getItem('ranking')) || [];
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        document.getElementById('contador').innerText = `${contador} vezes clicadas`;
+        let contador = 0;
+        let recorde = 0;
+        let ranking = [];
 
-        function atualizarRecorde() {
-            if (contador > recorde) {
-                recorde = contador;
-                localStorage.setItem('recorde', recorde);
-                document.getElementById('recorde').innerText = recorde;
+        // Carrega os dados do Firestore
+        async function carregarDados() {
+            const doc = await db.collection('ranking').doc('global').get();
+            if (doc.exists) {
+                const data = doc.data();
+                contador = data.contador || 0;
+                recorde = data.recorde || 0;
+                ranking = data.ranking || [];
+                atualizarInterface();
             }
+        }
+
+        function atualizarInterface() {
+            document.getElementById('contador').innerText = `${contador} vezes clicadas`;
+            document.getElementById('recorde').innerText = recorde;
+            atualizarRanking();
+            verificarConquistas();
         }
 
         function verificarConquistas() {
@@ -92,7 +117,7 @@
         function atualizarRanking() {
             const listaRanking = document.getElementById('lista-ranking');
             listaRanking.innerHTML = '';
-            ranking.sort((a, b) => b.pontos - a.pontos).forEach((item, index) => {
+            ranking.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.innerText = `${index + 1}. ${item.nome}: ${item.pontos} cliques`;
                 li.classList.add('ranking-item');
@@ -102,27 +127,19 @@
 
         document.body.addEventListener('click', () => {
             contador++;
-            localStorage.setItem('contador', contador);
-            document.getElementById('contador').innerText = `${contador} vezes clicadas`;
-            atualizarRecorde();
-            verificarConquistas();
+            atualizarInterface();
         });
 
         document.body.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 contador++;
-                localStorage.setItem('contador', contador);
-                document.getElementById('contador').innerText = `${contador} vezes clicadas`;
-                atualizarRecorde();
-                verificarConquistas();
+                atualizarInterface();
             }
         });
 
         document.getElementById('resetar').addEventListener('click', () => {
             contador = 0;
-            localStorage.setItem('contador', contador);
-            document.getElementById('contador').innerText = `${contador} vezes clicadas`;
-            verificarConquistas();
+            atualizarInterface();
         });
 
         document.getElementById('conquistas').addEventListener('click', () => {
@@ -136,7 +153,7 @@
             atualizarRanking();
         });
 
-        document.getElementById('salvar-nome').addEventListener('click', () => {
+        document.getElementById('salvar-nome').addEventListener('click', async () => {
             const nome = document.getElementById('nome').value.trim();
             if (nome) {
                 const existing = ranking.find(item => item.nome === nome);
@@ -146,14 +163,13 @@
                     ranking.push({ nome, pontos: contador });
                 }
                 ranking.sort((a, b) => b.pontos - a.pontos);
-                localStorage.setItem('ranking', JSON.stringify(ranking));
+                recorde = Math.max(recorde, contador);
+                await db.collection('ranking').doc('global').set({ contador, recorde, ranking });
                 atualizarRanking();
             }
         });
 
-        atualizarRecorde();
-        verificarConquistas();
-        atualizarRanking();
+        carregarDados();
     </script>
 </body>
 </html>
